@@ -138,6 +138,10 @@ message PluginCapability {
 
       // TYPE_METRICS indicates that the Plugin provides metrics to the instance container
       TYPE_METRICS = 10;
+
+      // TYPE_LOGS indicates that the Plugin consumes log entries from
+      // the instance container
+      TYPE_LOGS = 11;
     }
     Type type = 1;
   }

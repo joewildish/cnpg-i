@@ -1,0 +1,157 @@
+// @exclude
+//
+// Copyright © contributors to CloudNativePG, established as
+// CloudNativePG a Series of LF Projects, LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+package cnpgi.logs.v1;
+option go_package = "github.com/cloudnative-pg/cnpg-i/pkg/logs";
+
+
+service Logs {
+  // GetCapabilities gets the capabilities of the Logs service.
+  rpc GetCapabilities(LogsCapabilitiesRequest) returns (LogsCapabilitiesResult);
+
+  // UploadServerLogs streams Postgres log entries to service.
+  rpc UploadServerLogs(stream UploadServerLogsRequest) returns (UploadServerLogsResult);
+
+  // UploadAuditLogs streams PgAudit log entries to service.
+  rpc UploadAuditLogs(stream UploadAuditLogsRequest) returns (UploadAuditLogsResult);
+}
+
+message LogsCapabilitiesRequest {
+  // Intentionally empty.
+}
+
+message LogsCapabilitiesResult {
+  // All the capabilities the plugin supports.  This field is OPTIONAL.
+  repeated LogsCapability capabilities = 1;
+}
+
+message LogsCapability {
+  message RPC {
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+
+      // TYPE_SERVER_LOGS indicates that the Plugin is able to respond
+      // to UploadServerLogs RPC streaming requests.
+      TYPE_SERVER_LOGS = 1;
+
+      // TYPE_AUDIT_LOGS indicates that the Plugin is able to respond
+      // to UploadAuditLogs RPC streaming requests.
+      TYPE_AUDIT_LOGS = 2;
+    }
+
+    Type type = 1;
+  }
+
+  oneof type {
+    RPC rpc = 1;
+  }
+}
+
+message UploadServerLogsRequest {
+  message Entry {
+    string log_time = 1;
+    string user_name = 2 ;
+    string database_name = 3;
+    string process_id = 4;
+    string connection_from = 5;
+    string session_id = 6;
+    string session_line_num = 7;
+    string command_tag = 8;
+    string session_start_time = 9;
+    string virtual_transaction_id = 10;
+    string transaction_id = 11;
+    string error_severity = 12;
+    string sql_state_code = 13;
+    string message = 14;
+    string detail = 15;
+    string hint = 16;
+    string internal_query = 17;
+    string internal_query_pos = 18;
+    string context = 19;
+    string query = 20;
+    string query_pos = 21;
+    string location = 22;
+    string application_name = 23;
+    string backend_type = 24;
+    string leader_pid = 25;
+    string query_id = 26;
+  }
+
+  // The field is REQUIRED and contains the Postgres log entries emitted
+  // into the CSV logging collector.  The server may choose to send one
+  // request per entry or to batch multiple log entries into a single
+  // request.
+  repeated Entry entries = 1;
+}
+
+message UploadServerLogsResult {
+  // Intentionally empty.
+}
+
+message UploadAuditLogsRequest {
+  message Entry {
+    // One of SESSION or OBJECT.
+    string audit_type = 1;
+
+    // Unique statement ID for this session. Each statement ID
+    // represents a backend call. Statement IDs are sequential even if
+    // some statements are not logged. There may be multiple entries for
+    // a statement ID when more than one relation is logged.
+    string statement_id = 2;
+
+    // Sequential ID for each sub-statement within the main statement.
+    // For example, calling a function from a query. Sub-statement IDs
+    // are continuous even if some sub-statements are not logged. There
+    // may be multiple entries for a sub-statement ID when more than one
+    // relation is logged.
+    string substatement_id = 3;
+
+    // One of READ, WRITE, FUNCTION, ROLE, DDL, MISC, MISC_SET.
+    string class = 4;
+
+    // One of ALTER TABLE, SELECT, etc (command tags).
+    string command = 5;
+
+    // One of TABLE, INDEX, VIEW, etc. Available for SELECT, DML and
+    // most DDL statements.
+    string object_type = 6;
+
+    // The fully-qualified object name (e.g. public.account). Available
+    // for SELECT, DML and most DDL statements.
+    string object_name = 7;
+
+    // SQL statement executed on the backend.
+    string statement = 8;
+
+    // If pgaudit.log_parameter is set then this field will contain the
+    // statement parameters as quoted CSV or <none> if there are no
+    // parameters. Otherwise, the field is <not logged>.
+    string parameter = 9;
+  }
+
+  // The field is REQUIRED and contains the PgAudit log entries emitted
+  // into the CSV logging collector.  The server may choose to send one
+  // request per entry or to batch multiple log entries into a single
+  // request.
+  repeated Entry entries = 1;
+}
+
+message UploadAuditLogsResult {
+  // Intentionally empty.
+}
